@@ -1,15 +1,40 @@
 ﻿# Device Management Script
 # Author: Tuan Hoang
 # Version: 0.1
-####### Varaible Declaration #######
-$folder = 'c:\PowershellSSHManager'
-$sshcmd = 'c:\users\user1\Downloads\putty.exe'
-$pfxfile = $folder+'\cert.pfx'
-$certname = 'CERT'
-$credfile = $folder+'\credential.xml'
-$devicefile = $folder+'\devices.csv'
-####################################
 
+############# Read-Config ###############
+function Read-Config {
+    get-content DevMgmt.ini | foreach-object {
+        $iniData = @{}
+        $iniData[$_.split('=')[0]] = $_.split('=')[1]
+        $iniData
+    }
+
+    $iniData.certname
+}
+Function Parse-IniFile ($file) {
+    $ini = @{}
+  
+    # Create a default section if none exist in the file. Like a java prop file.
+    $section = "NO_SECTION"
+    $ini[$section] = @{}
+  
+    switch -regex -file $file {
+      "^\[(.+)\]$" {
+        $section = $matches[1].Trim()
+        $ini[$section] = @{}
+      }
+      "^\s*([^#].+?)\s*=\s*(.*)" {
+        $name,$value = $matches[1..2]
+        # skip comments that start with semicolon:
+        if (!($name.StartsWith(";"))) {
+          $ini[$section][$name] = $value.Trim()
+        }
+      }
+    }
+    return $ini
+  }
+  
 ############# Import-Cert ###############
 function Import-Cert {
     try {
@@ -98,7 +123,9 @@ function Connect-Device {
 
 ################ EXIT ##############
 function Exit-Program {
+    $certname
     Get-ChildItem Cert:\CurrentUser\My -DnsName $certname | Remove-Item
+    timeout /t 3
     Exit
 }
 
@@ -195,6 +222,16 @@ function Remove-Credential {
 
 
 ################ MAIN ############
+
+############# Variable ##############
+$config = Parse-IniFile("devmgmt.ini")
+$folder = $config["CONFIG"]["folder"]
+$sshcmd = $config["CONFIG"]["sshcmd"]
+$pfxfile = $folder + "\" + $config["CONFIG"]["pfxfile"]
+$certname = $config["CONFIG"]["certname"]
+$credfile = $folder + "\" + $config["CONFIG"]["credfile"]
+$devicefile = $folder + "\" + $config["CONFIG"]["devicefile"]
+
 Import-Cert
 $devices = Import-Csv $devicefile
 
@@ -233,5 +270,5 @@ While ($True){
         }
     }
     if ($match -eq 0){ Write-Host "Invalid Input" }
-    timeout /t 1
+    timeout /t 2
 }
