@@ -1,6 +1,12 @@
 ﻿#===== VARIABLES =========
 $timeout=30
+$configfile="devmgmt.ini"
+$programfile="DevMgmt.ps1"
 #=========================
+if (-not(Test-Path $configfile) -or (-not(Test-Path $programfile))) {
+        Write-Host "Configuration file" $configfile "and/or program file" $programfile "does not existed"
+        Exit
+    }
 $p=Start-Process  "powershell" -argumentlist 'c:\powershellSSHmanager\DevMgmt.ps1' -PassThru
 
 ### For System that is not restricting language mode

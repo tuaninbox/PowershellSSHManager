@@ -18,7 +18,10 @@ Function Parse-IniFile ($file) {
     # Create a default section if none exist in the file. Like a java prop file.
     $section = "NO_SECTION"
     $ini[$section] = @{}
-  
+    if (-not(Test-Path $file)) {
+        Write-Host "Configuration file" $file "does not existed"
+        Exit
+    }
     switch -regex -file $file {
       "^\[(.+)\]$" {
         $section = $matches[1].Trim()
@@ -79,7 +82,7 @@ function Decrypt-DataUsingCert {
 }
 
 ############# Menu #########################
-function Print-Menu {
+function Print-Menu1 {
     [CmdletBinding()]
     param(
         [Parameter()]
@@ -97,6 +100,29 @@ function Print-Menu {
     Write-Host "R . Remove Credential"
     Write-Host "Q . Quit"
     Write-Host "#################################################################"
+    Write-Host
+    $r=Read-Host "Select an option"
+    return $r
+}
+
+function Print-Menu {
+    Clear
+    # Use this site (https://ozh.github.io/ascii-tables/) to generate menu below
+    $menu="
++----------------+----------------+----------------+----------------+
+|    Switches    |     Routers    |    Firewalls   | Load Balancers |
++----------------+----------------+----------------+----------------+
+| 1. Switch 1    | 30. Router 1   | 40. Firewall 1 | 50. LB 1       |
+| 2. Switch 2    | 31. Router 2   | 41. Firewall 2 | 51. LB 2       |
+| 3. Switch 3    | 32. Router 3   | 42. Firewall 3 |                |
++----------------+----------------+----------------+----------------+"
+
+    Write-Host $menu
+    Write-Host "| A . Add Credential                                                |"
+    Write-Host "| V . View Credential                                               |"
+    Write-Host "| R . Remove Credential                                             |"
+    Write-Host "| Q . Quit                                                          |"
+    Write-Host "+-------------------------------------------------------------------+"
     Write-Host
     $r=Read-Host "Select an option"
     return $r
