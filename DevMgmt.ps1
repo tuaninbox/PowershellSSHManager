@@ -151,6 +151,7 @@ function Connect-Device {
 function Exit-Program {
     $certname
     Get-ChildItem Cert:\CurrentUser\My -DnsName $certname | Remove-Item
+    Write-Host "Key Clear!"
     timeout /t 3
     Exit
 }

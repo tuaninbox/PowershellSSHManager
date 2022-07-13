@@ -1,13 +1,56 @@
 ﻿#===== VARIABLES =========
-$timeout=30
+$timeout=3600
 $configfile="devmgmt.ini"
 $programfile="DevMgmt.ps1"
 #=========================
+
+################ EXIT ##############
+function Exit-Program {
+    $certname
+    Get-ChildItem Cert:\CurrentUser\My -DnsName $certname | Remove-Item
+    Write-Host "Key Clear!"
+    timeout /t 3
+    Exit
+}
+
+################ Parse Config FIle ################
+Function Parse-IniFile ($file) {
+    $ini = @{}
+  
+    # Create a default section if none exist in the file. Like a java prop file.
+    $section = "NO_SECTION"
+    $ini[$section] = @{}
+    if (-not(Test-Path $file)) {
+        Write-Host "Configuration file" $file "does not existed"
+        Exit
+    }
+    switch -regex -file $file {
+      "^\[(.+)\]$" {
+        $section = $matches[1].Trim()
+        $ini[$section] = @{}
+      }
+      "^\s*([^#].+?)\s*=\s*(.*)" {
+        $name,$value = $matches[1..2]
+        # skip comments that start with semicolon:
+        if (!($name.StartsWith(";"))) {
+          $ini[$section][$name] = $value.Trim()
+        }
+      }
+    }
+    return $ini
+  }
+
+
 if (-not(Test-Path $configfile) -or (-not(Test-Path $programfile))) {
         Write-Host "Configuration file" $configfile "and/or program file" $programfile "does not existed"
         Exit
     }
-$p=Start-Process  "powershell" -argumentlist 'c:\powershellSSHmanager\DevMgmt.ps1' -PassThru
+
+$config = Parse-IniFile("devmgmt.ini")
+
+$certname = $config["CONFIG"]["certname"]
+$folder = $config["CONFIG"]["folder"]
+$p=Start-Process  "powershell" -argumentlist $folder\$programfile -PassThru
 
 ### For System that is not restricting language mode
 #[Environment]::SetEnvironmentVariable('ScriptStart',(Get-Date -Format 'dd/MM/yyyy HH:mm:ss'),[System.EnvironmentVariableTarget]::User)
@@ -42,7 +85,6 @@ do {
         #[Environment]::SetEnvironmentVariable('ScriptStart',$null,"User")
         ### For System that is restricting language mode -> use file
         Remove-Item ScriptStart.txt -Force
-
-        Exit
+        Exit-Program
   } #if
 } while ($true) 
